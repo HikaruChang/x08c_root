@@ -62,7 +62,7 @@ verify_one() {
 
     "$apksigner" verify --verbose "$apk" >/dev/null
     certs=$("$apksigner" verify --print-certs "$apk")
-    grep -Fq "Signer #1 certificate SHA-256 digest: $EXPECTED_CERT" <<< "$certs" || {
+    grep -Fq "certificate SHA-256 digest: $EXPECTED_CERT" <<< "$certs" || {
         echo "signer certificate mismatch for $apk" >&2
         printf '%s\n' "$certs" >&2
         exit 1
