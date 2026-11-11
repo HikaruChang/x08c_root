@@ -49,7 +49,9 @@ verify_one() {
 
     unzip -tq "$apk" >/dev/null
     dex_strings=$(unzip -p "$apk" classes.dex | strings)
-    printf '%s\n' "$dex_strings" | grep -Fq "$COPYRIGHT"
+    grep -Fq "$COPYRIGHT" <<< "$dex_strings" || {
+        echo "copyright string missing from $apk" >&2; exit 1
+    }
 
     apksigner=$(sdk_tool apksigner) || {
         echo "Android SDK apksigner not found" >&2; exit 1
@@ -60,11 +62,19 @@ verify_one() {
 
     "$apksigner" verify --verbose "$apk" >/dev/null
     certs=$("$apksigner" verify --print-certs "$apk")
-    printf '%s\n' "$certs" | grep -Fq "Signer #1 certificate SHA-256 digest: $EXPECTED_CERT"
+    grep -Fq "Signer #1 certificate SHA-256 digest: $EXPECTED_CERT" <<< "$certs" || {
+        echo "signer certificate mismatch for $apk" >&2
+        printf '%s\n' "$certs" >&2
+        exit 1
+    }
 
     badging=$("$aapt2" dump badging "$apk")
-    printf '%s\n' "$badging" | grep -Fq "package: name='$package_name'"
-    printf '%s\n' "$badging" | grep -Fq "versionName='$version'"
+    grep -Fq "package: name='$package_name'" <<< "$badging" || {
+        echo "package name mismatch for $apk" >&2; exit 1
+    }
+    grep -Fq "versionName='$version'" <<< "$badging" || {
+        echo "versionName mismatch for $apk" >&2; exit 1
+    }
 
     echo "verified: $(basename "$apk")"
     echo "sha256:  $actual"
