@@ -1,0 +1,86 @@
+name: Release APK
+
+on:
+  push:
+    tags:
+      - "x08c-root-v*"
+      - "x08e-launcher-v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Verify and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v4
+
+      - name: Verify signed release artifact
+        run: ./scripts/verify-release.sh "${GITHUB_REF_NAME}"
+
+      - name: Select release asset
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${GITHUB_REF_NAME}" in
+            x08c-root-v*)
+              component=x08c-root
+              package_name=moe.rua.x08croot
+              version=${GITHUB_REF_NAME#x08c-root-v}
+              title="X08C Root ${version}"
+              warning="This APK temporarily exposes root SSH with the public credential root / areuok. Use only on an isolated trusted network and reboot after testing."
+              ;;
+            x08e-launcher-v*)
+              component=x08e-launcher
+              package_name=moe.rua.x08clauncher
+              version=${GITHUB_REF_NAME#x08e-launcher-v}
+              title="X08E Apps Launcher ${version}"
+              warning="This launcher has no background service and requests no Android permissions."
+              ;;
+            *)
+              echo "Unsupported tag: ${GITHUB_REF_NAME}" >&2
+              exit 2
+              ;;
+          esac
+
+          asset="dist/${component}-v${version}.apk"
+          test -f "$asset"
+          hash=$(sha256sum "$asset" | cut -d' ' -f1)
+          printf '%s  %s\n' "$hash" "$(basename "$asset")" > "${asset}.sha256"
+
+          {
+            echo "## ${title}"
+            echo
+            echo "- Package: \`${package_name}\`"
+            echo "- SHA-256: \`${hash}\`"
+            echo "- Signer certificate SHA-256: \`d4bb64156f9715b0a5afd3200ce9052b6471b1bf4189c1de17f41a5bf1704570\`"
+            echo
+            echo "${warning}"
+            echo
+            echo "Powered by NyphexAI. Developed by Hikaru(i@rua.moe)"
+          } > release-notes.md
+
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+          echo "checksum=${asset}.sha256" >> "$GITHUB_OUTPUT"
+          echo "title=$title" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            "${{ steps.release.outputs.asset }}" \
+            "${{ steps.release.outputs.checksum }}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --verify-tag \
+            --title "${{ steps.release.outputs.title }}" \
+            --notes-file release-notes.md

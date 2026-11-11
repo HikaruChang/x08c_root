@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="moe.rua.x08croot" android:versionCode="101" android:versionName="1.0.1">
+    <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="28"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <application android:label="@string/app_name" android:icon="@drawable/ic_x08c" android:theme="@style/AppTheme"
+        android:extractNativeLibs="true" android:allowBackup="false">
+        <activity android:name=".MainActivity" android:exported="true"
+            android:screenOrientation="landscape" android:configChanges="orientation|screenSize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <receiver android:name=".BootReceiver" android:enabled="true" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
+        <service android:name=".AutoRootJobService" android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false"/>
+    </application>
+</manifest>
