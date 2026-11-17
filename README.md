@@ -1,11 +1,12 @@
 # Redmi小爱音箱Pro8：X08C Root / X08E Launcher
 
-本仓库只发布两个 Android 应用：
+本仓库收录并发布三个面向 Redmi小爱音箱Pro8 的组件产物：
 
 | 应用 | 版本 | 包名 | 用途 |
 | --- | --- | --- | --- |
 | X08C Root | 1.0.1 | `moe.rua.x08croot` | MT8167 / Android 9 设备上的临时 root、root ADB 与临时 SSH |
 | X08E Apps Launcher | 1.0.0 | `moe.rua.x08clauncher` | Redmi小爱音箱Pro8 的横屏轻量应用启动器 |
+| X08E MicoLauncher Apps Mod | 101.5.100 | `com.xiaomi.micolauncher` | 重做系统桌面「应用」分页的修改版启动器与 `oat/arm` 产物 |
 
 仓库不包含 boot 镜像、固件、设备备份、恢复脚本、私钥、开发日志或内部缓存。X08A、X08C 与 X08E 不是可以随意混用的型号；请先确认设备底部标签和系统硬件代号。
 
@@ -15,6 +16,8 @@
 
 - `x08c-root-v1.0.1.apk`
 - `x08e-launcher-v1.0.0.apk`
+- `x08e-micolauncher-v101.5.100.apk`
+- `x08e-micolauncher-v101.5.100-oat-arm.tar.gz`
 
 每个 Release 同时提供独立的 `.sha256` 文件。仓库中的 [`dist/CHECKSUMS.sha256`](dist/CHECKSUMS.sha256) 是当前发布产物的固定校验值。
 
@@ -48,13 +51,27 @@ Powered by NyphexAI. Developed by Hikaru(i@rua.moe)
 
 详情见 [`x08e-launcher/README.md`](x08e-launcher/README.md)。
 
+## X08E MicoLauncher Apps Mod 101.5.100
+
+![X08E MicoLauncher Apps Mod 101.5.100](docs/images/x08e-micolauncher-v101.5.100.png)
+
+基于原厂 `com.xiaomi.micolauncher`（`101.5.100-soundboxNormal`）重做系统桌面「应用」分页，保留原生三行横向宫格与 Miuix 样式，移除云端推广卡片与无自定义图标的隐藏入口，默认直接展示全部本机应用与 8 项内置 UI 功能。
+
+由于系统桌面采用系统共享权限与签名，安装方式与普通 APK 不同：通过 `x08c-root` 获取临时 root ADB 后，使用 `oat/arm` 替换部署（无需修改 `/system` 或重刷 `boot`）。详细步骤与回滚命令见 [`x08e-micolauncher/README.md`](x08e-micolauncher/README.md)。
+
 ## 安装
 
-使用你已获授权设备上的包安装器，或在 ADB 已经可用时执行：
+对于独立安装包，使用你已获授权设备上的包安装器，或在 ADB 已经可用时执行：
 
 ```sh
 adb install -r x08c-root-v1.0.1.apk
 adb install -r x08e-launcher-v1.0.0.apk
+```
+
+对于定制系统桌面，请在开启临时 root ADB 后执行：
+
+```sh
+python3 x08e-micolauncher/scripts/build_and_deploy.py --deploy-apk dist/x08e-micolauncher-v101.5.100.apk --serial <device_ip>:5555
 ```
 
 安装 APK 不会自行开启 stock 系统原本关闭的 ADB。
@@ -69,6 +86,9 @@ git push origin x08c-root-v1.0.1
 
 git tag -a x08e-launcher-v1.0.0 -m "X08E Launcher 1.0.0"
 git push origin x08e-launcher-v1.0.0
+
+git tag -a x08e-micolauncher-v101.5.100 -m "X08E MicoLauncher Apps Mod 101.5.100"
+git push origin x08e-micolauncher-v101.5.100
 ```
 
 工作流会拒绝未知标签，并校验：

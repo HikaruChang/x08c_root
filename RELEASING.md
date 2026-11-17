@@ -1,11 +1,12 @@
 # Release process
 
-This repository publishes two independent APKs. A release tag must use one of these forms:
+This repository publishes three independent artifacts. A release tag must use one of these forms:
 
 - `x08c-root-v<version>`
 - `x08e-launcher-v<version>`
+- `x08e-micolauncher-v<version>`
 
-The version suffix must exactly match `android:versionName` in that component's `AndroidManifest.xml`, and the matching versioned APK must already exist in `dist/`.
+For standalone apps (`x08c-root`, `x08e-launcher`), the version suffix must match `android:versionName` in that component's `AndroidManifest.xml`, and the matching versioned APK must exist in `dist/`. For `x08e-micolauncher`, `<version>-soundboxNormal` must match the patched APK's `versionName`, and both `dist/x08e-micolauncher-v<version>.apk` and `dist/x08e-micolauncher-v<version>-oat-arm.tar.gz` must exist in `dist/`.
 
 On a tag push, `.github/workflows/release.yml` runs `scripts/verify-release.sh`, creates a one-file checksum, and uses the GitHub CLI to create the Release. The workflow has only `contents: write` permission.
 

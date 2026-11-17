@@ -14,3 +14,9 @@
 - License notice: [`licenses/DROPBEAR.txt`](licenses/DROPBEAR.txt)
 
 The repository does not include the temporary Dropbear build tree or compiler output. The license permits binary redistribution subject to its notices, which are included above.
+
+## Xiaomi MicoLauncher Base Binary
+
+- Upstream package: `com.xiaomi.micolauncher` (`101.5.100-soundboxNormal`, `versionCode 1010005100`)
+- Copyright: Xiaomi Inc. (proprietary stock system APK modified in-place at `classes4.dex` / `classes5.dex` and re-signed with debug key)
+- Original patch implementation added in this repository: [`x08e-micolauncher/src/com/xiaomi/micolauncher/feature/appscreen/LocalAppsHelper.java`](x08e-micolauncher/src/com/xiaomi/micolauncher/feature/appscreen/LocalAppsHelper.java) and [`x08e-micolauncher/scripts/build_and_deploy.py`](x08e-micolauncher/scripts/build_and_deploy.py)

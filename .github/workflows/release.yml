@@ -5,6 +5,7 @@ on:
     tags:
       - "x08c-root-v*"
       - "x08e-launcher-v*"
+      - "x08e-micolauncher-v*"
 
 permissions:
   contents: write
@@ -27,24 +28,85 @@ jobs:
         run: ./scripts/verify-release.sh "${GITHUB_REF_NAME}"
 
       - name: Select release asset
-        id: release
         shell: bash
         run: |
           set -euo pipefail
+          : > release-assets.txt
           case "${GITHUB_REF_NAME}" in
             x08c-root-v*)
               component=x08c-root
               package_name=moe.rua.x08croot
               version=${GITHUB_REF_NAME#x08c-root-v}
               title="X08C Root ${version}"
-              warning="This APK temporarily exposes root SSH with the public credential root / areuok. Use only on an isolated trusted network and reboot after testing."
+              asset="dist/${component}-v${version}.apk"
+              test -f "$asset"
+              hash=$(sha256sum "$asset" | cut -d' ' -f1)
+              printf '%s  %s\n' "$hash" "$(basename "$asset")" > "${asset}.sha256"
+              printf '%s\n%s\n' "$asset" "${asset}.sha256" >> release-assets.txt
+              {
+                echo "## ${title}"
+                echo
+                echo "- Package: \`${package_name}\`"
+                echo "- SHA-256: \`${hash}\`"
+                echo "- Signer certificate SHA-256: \`d4bb64156f9715b0a5afd3200ce9052b6471b1bf4189c1de17f41a5bf1704570\`"
+                echo
+                echo "This APK temporarily exposes root SSH with the public credential root / areuok. Use only on an isolated trusted network and reboot after testing."
+                echo
+                echo "Powered by NyphexAI. Developed by Hikaru(i@rua.moe)"
+              } > release-notes.md
               ;;
             x08e-launcher-v*)
               component=x08e-launcher
               package_name=moe.rua.x08clauncher
               version=${GITHUB_REF_NAME#x08e-launcher-v}
               title="X08E Apps Launcher ${version}"
-              warning="This launcher has no background service and requests no Android permissions."
+              asset="dist/${component}-v${version}.apk"
+              test -f "$asset"
+              hash=$(sha256sum "$asset" | cut -d' ' -f1)
+              printf '%s  %s\n' "$hash" "$(basename "$asset")" > "${asset}.sha256"
+              printf '%s\n%s\n' "$asset" "${asset}.sha256" >> release-assets.txt
+              {
+                echo "## ${title}"
+                echo
+                echo "- Package: \`${package_name}\`"
+                echo "- SHA-256: \`${hash}\`"
+                echo "- Signer certificate SHA-256: \`d4bb64156f9715b0a5afd3200ce9052b6471b1bf4189c1de17f41a5bf1704570\`"
+                echo
+                echo "This launcher has no background service and requests no Android permissions."
+                echo
+                echo "Powered by NyphexAI. Developed by Hikaru(i@rua.moe)"
+              } > release-notes.md
+              ;;
+            x08e-micolauncher-v*)
+              component=x08e-micolauncher
+              package_name=com.xiaomi.micolauncher
+              version=${GITHUB_REF_NAME#x08e-micolauncher-v}
+              full_version="${version}-soundboxNormal"
+              title="X08E MicoLauncher Apps Mod ${version}"
+              apk="dist/${component}-v${version}.apk"
+              tarball="dist/${component}-v${version}-oat-arm.tar.gz"
+              test -f "$apk"
+              test -f "$tarball"
+              apk_hash=$(sha256sum "$apk" | cut -d' ' -f1)
+              tar_hash=$(sha256sum "$tarball" | cut -d' ' -f1)
+              printf '%s  %s\n' "$apk_hash" "$(basename "$apk")" > "${apk}.sha256"
+              printf '%s  %s\n' "$tar_hash" "$(basename "$tarball")" > "${tarball}.sha256"
+              printf '%s\n%s\n%s\n%s\n' "$apk" "${apk}.sha256" "$tarball" "${tarball}.sha256" >> release-assets.txt
+              {
+                echo "## ${title}"
+                echo
+                echo "- Package: \`${package_name}\`"
+                echo "- Base version: \`${full_version}\` (\`versionCode 1010005100\`)"
+                echo "- APK SHA-256: \`${apk_hash}\`"
+                echo "- Signer certificate SHA-256: \`47774f2b9492f457de5b7ca61932c91154af18e9153143b8af198c37e3394911\`"
+                echo "- OAT bundle SHA-256: \`${tar_hash}\`"
+                echo
+                echo "Redesigned local Apps page for Redmi X08E retaining native Mico UI styling (3 tabs: 全部 / 本机应用 / 内置功能, rounded icons, no cloud AppStore promos, auto-hiding iconless/internal template apps)."
+                echo
+                echo "Do not install the debug-signed APK directly over the stock privileged system package. Enable temporary root ADB with \`x08c-root\`, then deploy via \`python3 x08e-micolauncher/scripts/build_and_deploy.py --deploy-apk x08e-micolauncher-v${version}.apk --serial <device_ip>:5555\` or extract \`x08e-micolauncher-v${version}-oat-arm.tar.gz\` into \`/data/app/com.xiaomi.micolauncher-*/oat/arm/\`."
+                echo
+                echo "Powered by NyphexAI. Developed by Hikaru(i@rua.moe)"
+              } > release-notes.md
               ;;
             *)
               echo "Unsupported tag: ${GITHUB_REF_NAME}" >&2
@@ -52,35 +114,19 @@ jobs:
               ;;
           esac
 
-          asset="dist/${component}-v${version}.apk"
-          test -f "$asset"
-          hash=$(sha256sum "$asset" | cut -d' ' -f1)
-          printf '%s  %s\n' "$hash" "$(basename "$asset")" > "${asset}.sha256"
-
           {
-            echo "## ${title}"
-            echo
-            echo "- Package: \`${package_name}\`"
-            echo "- SHA-256: \`${hash}\`"
-            echo "- Signer certificate SHA-256: \`d4bb64156f9715b0a5afd3200ce9052b6471b1bf4189c1de17f41a5bf1704570\`"
-            echo
-            echo "${warning}"
-            echo
-            echo "Powered by NyphexAI. Developed by Hikaru(i@rua.moe)"
-          } > release-notes.md
-
-          echo "asset=$asset" >> "$GITHUB_OUTPUT"
-          echo "checksum=${asset}.sha256" >> "$GITHUB_OUTPUT"
-          echo "title=$title" >> "$GITHUB_OUTPUT"
+            echo "RELEASE_TITLE=${title}"
+          } >> "$GITHUB_ENV"
 
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+          mapfile -t assets < release-assets.txt
           gh release create "${GITHUB_REF_NAME}" \
-            "${{ steps.release.outputs.asset }}" \
-            "${{ steps.release.outputs.checksum }}" \
+            "${assets[@]}" \
             --repo "${GITHUB_REPOSITORY}" \
             --verify-tag \
-            --title "${{ steps.release.outputs.title }}" \
+            --title "${RELEASE_TITLE}" \
             --notes-file release-notes.md
